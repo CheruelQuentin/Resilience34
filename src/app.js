@@ -3,6 +3,7 @@ const express = require("express")
 const hbs = require('hbs')
 const app = express()
 var bodyParser = require("body-parser")
+const mysql = require("mysql")
 
 
 const port = process.env.PORT || 3000
@@ -23,6 +24,14 @@ hbs.registerPartials(partialsPath)
 app.use(express.static(publicDirectoryPath))
 app.use(bodyParser.urlencoded({ extended: true }))
 
+const db = mysql.createConnection({ 
+  host :'localhost',
+  user : 'root',
+  password : '',
+  database : 'resilience34'
+  
+})
+
 app.get('/', function (req, res) {
   res.render('index');
 });
@@ -34,28 +43,37 @@ app.post('/waitingPage',function (req, res) {
   if (password == undefined || username == undefined) { 
     
     return res.send({ 
-      error : "you must a username"
+      error : "you must enter a username"
     })
-
   } else {
-
     if(connectUser(username, password) == false) { 
       return res.send({ 
         error : "username or password errors"
       })
-
     } else {
 
-      res.render('waitingPage')
-      detect = require('./utils/browserDetect.js')
+      var authenticateldap = authenticateDN("uid=quentin,ou=ourldap","")
       
-      console.log('ip '+ req.connection.remoteAddress)
-      console.log('port '+ req.connection.remotePort)
-      console.log('user is connect')
-      ipIssue("resilience34@outlook.fr")
-      validateConnecting("resilience34@outlook.fr")
+      if(authenticateldap == true){
+        let sql = `SELECT tracker_ip FROM user, tracker WHERE user_id = tracker_user and user_name = '${username}'`;
+        let query = db.query(sql, (err, result) => {
+          if(err) throw err;
+          console.log(result);
+          if(result == req.connection.remoteAddress){
+            detect = require('./utils/browserDetect.js')
+            validateConnecting("resilience34@outlook.fr")
+            res.render('waitingPage')
+          } else {
+            validateConnecting("resilience34@outlook.fr")
+            ipIssue("resilience34@outlook.fr")
+            res.render('waitingPage')
+          }
+        })      
+        console.log('ip '+ req.connection.remoteAddress)
+        console.log('port '+ req.connection.remotePort)
+        console.log('user is connect')  
+      }
      // authenticateDN("uid=quentin,ou=ourldap","")
-     
     }   
   }
 })

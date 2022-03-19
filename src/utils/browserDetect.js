@@ -12,7 +12,7 @@ const detection = () => {
   nom = browser.name
   version = browser.version
   os = browser.os
-    return { version, os , name}
+    return nom
 }
 
 module.exports = detection

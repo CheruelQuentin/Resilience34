@@ -6,7 +6,6 @@ const connectUser = (username, password) => {
     return false
   } else {
     return true
-    
   }
 }
 
