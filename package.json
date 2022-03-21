@@ -16,6 +16,7 @@
     "hbs": "^4.2.0",
     "ldap-authentication": "^2.2.9",
     "ldapjs": "^2.3.2",
+    "messagebird": "^3.7.2",
     "mysql": "^2.18.1",
     "nodemailer": "^6.7.2",
     "nodemon": "^2.0.15",

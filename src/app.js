@@ -15,6 +15,8 @@ const connectUser = require('./utils/connectUser.js')
 const authenticateDN = require('./utils/ldapConnect.js')
 const ipIssue = require('./utils/nodemailer.js')
 const validateConnecting  = require('./utils/2FA.js')
+const res = require('express/lib/response')
+const messagebird = require('messagebird')('Hyn3Cut3NcJK0UXnB2K6EYZG0');
 
 // Setup handlebars engine and views location 
 app.set('view engine','hbs')
@@ -32,54 +34,106 @@ const db = mysql.createConnection({
   
 })
 
+
+
+
+function authenticateDN(username, password){
+  var client = ldap.createClient({
+    url: 'ldap://192.168.1.18:5389'
+  })
+  client.bind(username,password,function(err){
+    if(err){
+      console.log("Error in new connection "+ err.code +err);
+    } else {
+      console.log("success")
+	//  addUser();
+		var authenticateldap = true
+		connexion(authenticateldap)
+    }
+  })
+}
+
+
+function connexion(authenticateldap) {
+  if(authenticateldap == true) {
+    var params = {
+      originator: '',
+      type: 'sms'
+    }
+    messagebird.verify.create('+33651266267', params, function (error, response) {
+                    if (error) {
+                      //request has failed
+                      console.log(error);
+                      res.render('index');
+                    } else {
+                    // Request was successfull
+                      console.log(response);
+
+                      let sql = `SELECT tracker_ip FROM user, tracker WHERE user_id = tracker_user and user_name = '${username}'`;
+                      let query = db.query(sql, (err, result) => {
+                        if(err) throw err;
+                        console.log(result);
+
+                      if(result == req.connection.remoteAddress) {
+                        
+                        detect = require('./utils/browserDetect.js')
+                        validateConnecting("resilience34@outlook.fr")
+                        res.render('waitingPage', { id : response.id })
+
+                        console.log('ip '+ req.connection.remoteAddress)
+                        console.log('port '+ req.connection.remotePort)
+                        console.log('user is connect')  
+
+                      } else {
+                        validateConnecting("resilience34@outlook.fr")
+                        ipIssue("resilience34@outlook.fr")
+                        res.render('waitingPage', { id : response.id })
+                      }
+                    })
+
+                  }
+            })         
+  } else {
+    res.render('index')
+  }
+}
+
+
+
 app.get('/', function (req, res) {
   res.render('index');
 });
 
+
 app.post('/waitingPage',function (req, res) {
   const username = req.body.username
   const password = req.body.password
-
   if (password == undefined || username == undefined) { 
-    
     return res.send({ 
       error : "you must enter a username"
     })
   } else {
     if(connectUser(username, password) == false) { 
-      return res.send({ 
-        error : "username or password errors"
-      })
+      res.render('error')
     } else {
-
-      var authenticateldap = authenticateDN("uid=quentin,ou=ourldap","")
-      
-      if(authenticateldap == true){
-        let sql = `SELECT tracker_ip FROM user, tracker WHERE user_id = tracker_user and user_name = '${username}'`;
-        let query = db.query(sql, (err, result) => {
-          if(err) throw err;
-          console.log(result);
-          if(result == req.connection.remoteAddress){
-            detect = require('./utils/browserDetect.js')
-            validateConnecting("resilience34@outlook.fr")
-            res.render('waitingPage')
-          } else {
-            validateConnecting("resilience34@outlook.fr")
-            ipIssue("resilience34@outlook.fr")
-            res.render('waitingPage')
-          }
-        })      
-        console.log('ip '+ req.connection.remoteAddress)
-        console.log('port '+ req.connection.remotePort)
-        console.log('user is connect')  
-      }
-     // authenticateDN("uid=quentin,ou=ourldap","")
+      authenticateDN("uid="+username+",ou=ourldap","")
     }   
   }
 })
 
-app.get('/connexion', function(req, res){
-  res.render('connexion')
+
+
+
+app.post('/connexion', function(req, res){
+  var id = req.body.id;
+  var token = req.body.token;
+  messagebird.verify.verify(id, token, function(err, response){
+    if (err) {
+      res.render('waitingPage');
+    } else {
+      res.render('connexion')
+    }
+  })  
 })
 
 app.listen(port,()=>{

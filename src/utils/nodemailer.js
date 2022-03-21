@@ -30,6 +30,4 @@ const ipIssue = (MAIL) => {
 }
 
 
-
-
 module.exports = ipIssue 

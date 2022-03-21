@@ -5,7 +5,14 @@
 <body>
   <div class="centered-form">
     <div class="centered-form__box">
-      <h1>Check your email</h1>
+      <h1>We have sent you a verification code!</h1>
+<form method="post" action="/connexion">
+      <input type="hidden" name="id" value="{{id}}"/>
+      <input type="text" name="token"/>
+      <input type="submit" value="check code"/>
+</form>
+
+
     </div>
   </div>
 </body>

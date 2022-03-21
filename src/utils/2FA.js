@@ -18,7 +18,7 @@ const validateConnecting = (MAIL) => {
     to: MAIL,
     subject: "Mspr connecting",
     text: "yo ",
-    html : "<a href='http://localhost:3000/connexion'>Lien de connexion</a>."
+    html : "Veuillez cliquer sur le lien de confirmation : <br><a href='http://localhost:3000/connexion'>Lien de connexion</a>."
   };
 
   transporter.sendMail(options, function (err,info){
