@@ -6,7 +6,6 @@ const db = mysql.createConnection({
   
 })
 
-
 // connect
 db.connect((err, db) => {
   if(err) {
@@ -15,7 +14,7 @@ db.connect((err, db) => {
   console.log('My sql connected successfull')
 })
 
-const addUser = (username, email,) => {
+const addUser = (username, email) => {
   let user = {user_id : 1,  user_name : username, user_email : email}
         let sql = "INSERT INTO user SET ?";
         let query = db.query(sql, user, (err, result) => {
@@ -24,17 +23,8 @@ const addUser = (username, email,) => {
         });
 }
 
-const addTracker = (tracker ,ip, id) => {
-  let tracker = {tracker_browser : tracker ,  tracker_ip : ip, tracker_user : id}
-        let sqli = "INSERT INTO tracker SET ?";
-        let quer = db.query(sqli, tracker, (err, result) => {
-          if(err) throw err;
-          console.log(result);
-        });
-}
 
 
 module.exports = {
-  addUser,
-  addTracker
+
 }
