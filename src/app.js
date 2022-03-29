@@ -25,6 +25,16 @@ app.use(express.static(publicDirectoryPath))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(useragent.express());
 
+const https = require('https');
+const fs = require('fs');
+
+
+const options = {
+  key: fs.readFileSync(process.cwd() + '/src/utils/ssl/key.pem'),
+  cert: fs.readFileSync(process.cwd() + '/src/utils/ssl/cert.pem')
+};
+
+
 const db = mysql.createConnection({ 
   host :'localhost',
   user : 'root',
@@ -154,6 +164,7 @@ app.post('/connexion', function(req, res){
   })  
 })
 
-app.listen(port,()=>{
+
+https.createServer(options,app).listen(port,()=>{
   console.log('Server listening on port' + port)
 })
