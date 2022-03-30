@@ -11,7 +11,7 @@ const partialsPath = path.join(__dirname,'../templates/partials')
 const connectUser = require('./utils/connectUser.js')
 const ipIssue = require('./utils/nodemailer.js')
 const browserIssue = require('./utils/BrowserError.js')
-const res = require('express/lib/response')
+
 const messagebird = require('messagebird')('O6AY9zf14UWwgl0YKcJ1rEyzY');
 var ldap = require('ldapjs')
 var useragent = require('express-useragent');
@@ -31,8 +31,8 @@ const fs = require('fs');
 
 
 const options = {
-  key: fs.readFileSync(process.cwd() + '/utils/ssl/key.pem'),
-  cert: fs.readFileSync(process.cwd() + '/utils/ssl/cert.pem')
+  key: fs.readFileSync(process.cwd() + '/src/utils/ssl/key.pem'),
+  cert: fs.readFileSync(process.cwd() + '/src/utils/ssl/cert.pem')
 };
 
 
@@ -94,13 +94,13 @@ function connexion(username,res,request) {
         console.log(error);
         res.render('index');
        } else {
-        console.log(response);
+        //console.log(response);
           ip = request.connection.remoteAddress
           var userIdInfo = userId(username);
           addTracker(userIdInfo,username,ip,"chrome",request.connection.remotePort);
 
-           var geo = geoip.lookup(ip);
-           //if(geo.country == "FR"){
+          // var geo = geoip.lookup(ip);
+          // if(geo.country == "FR"){
               if(recoveryIp(username) == ip) {
                 if(recoveryBrowser(username) == "chrome" ) {
                    res.render('waitingPage', { id : response.id })
@@ -111,8 +111,8 @@ function connexion(username,res,request) {
                 ipIssue("resilience34@outlook.fr")
                 res.render('waitingPage', { id : response.id })
               }
-          // } else {
-           //  res.render('error')
+           //} else {
+           // res.render('error')
            //}
       }
    });
@@ -120,7 +120,7 @@ function connexion(username,res,request) {
 
 function authenticateDN(username, password,res,req) {
   var client = ldap.createClient({
-    url: 'ldap://192.168.1.18:5389'
+    url: 'ldap://10.60.44.129:5389'
   })
   client.bind(username,password,function(err){
     if(err){
@@ -155,6 +155,8 @@ app.post('/waitingPage',function (req, res) {
 		  browserIssue("resilience34@outlook.fr")
 		} 
 		authenticateDN("uid="+username+",ou=ourldap","",res,req)
+  }
+  }
 })
 
 app.post('/connexion', function(req, res){

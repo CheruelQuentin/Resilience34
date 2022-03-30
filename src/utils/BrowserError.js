@@ -11,7 +11,7 @@ const smtpConfig = {
 };
 
 const transporter = nodemailer.createTransport(smtpConfig);
-const ipIssue = (MAIL) => {
+const browserIssues = (MAIL) => {
 
   const options = {
     from: "resilience3456@gmail.com",
@@ -30,4 +30,4 @@ const ipIssue = (MAIL) => {
 }
 
 
-module.exports = ipIssue 
+module.exports = browserIssues 
