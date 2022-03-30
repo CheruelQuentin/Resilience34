@@ -10,8 +10,9 @@ const viewsPath = path.join(__dirname, '../templates/views')
 const partialsPath = path.join(__dirname,'../templates/partials')
 const connectUser = require('./utils/connectUser.js')
 const ipIssue = require('./utils/nodemailer.js')
+const browserIssue = require('./utils/BrowserError.js')
 const res = require('express/lib/response')
-const messagebird = require('messagebird')('kaHUob1IBbeXl6Bv0759z6miw');
+const messagebird = require('messagebird')('O6AY9zf14UWwgl0YKcJ1rEyzY');
 var ldap = require('ldapjs')
 var useragent = require('express-useragent');
 var geoip = require('geoip-lite');
@@ -30,23 +31,23 @@ const fs = require('fs');
 
 
 const options = {
-  key: fs.readFileSync(process.cwd() + '/src/utils/ssl/key.pem'),
-  cert: fs.readFileSync(process.cwd() + '/src/utils/ssl/cert.pem')
+  key: fs.readFileSync(process.cwd() + '/utils/ssl/key.pem'),
+  cert: fs.readFileSync(process.cwd() + '/utils/ssl/cert.pem')
 };
 
 
 const db = mysql.createConnection({ 
   host :'localhost',
   user : 'root',
-  password : '',
+  password : 'password',
   database : 'resilience34'
 })
 
 
 function addTracker(userId ,username, ip , browser, port  ) {
-  let tracker = {userId : userId,  user_name : username, loginBrowser : browser, ipAddress : ip, loginConnectionPort : port}
-        let sql = "INSERT INTO loginInfo SET ?";
-        let query = db.query(sql, user, (err, result) => {
+  let tracker = {userId : userId, loginBrowser : browser, loginIpAddress : ip, loginConnectionPort : port}
+        let sql = "INSERT INTO LoginInfo SET ?";
+        let query = db.query(sql, tracker, (err, result) => {
           if(err) throw err;
           console.log(result);
         });
@@ -54,32 +55,36 @@ function addTracker(userId ,username, ip , browser, port  ) {
 
 function userId(username) {
   let sql = `SELECT id FROM UserProfile where name = '${username}'`;
-  let query = db.query(sql, user, (err, result) => {
+  let query = db.query(sql,(err, result) => {
     if(err) throw err;
     console.log(result);
+	return result;
   });
-  return result;
+  
 }
 
 function recoveryIp(username) {
         let sql = `SELECT ipAddress FROM UserProfile where name = '${username}'`;
-        let query = db.query(sql, user, (err, result) => {
+        let query = db.query(sql,(err, result) => {
           if(err) throw err;
           console.log(result);
-        });
-        return result;
+		  return result;
+		});
+        
 }
 
 function recoveryBrowser(username) {
-        let sql = `SELECT  browser FROM UserProfile where name = '${username}'`;
-        let query = db.query(sql, user, (err, result) => {
+        let sql = `SELECT defaultBrowser FROM UserProfile where name = '${username}'`;
+        let query = db.query(sql,(err, result) => {
           if(err) throw err;
           console.log(result);
-        });
-        return result;
+          return result;
+		});
+        
+		
 }
 
-function connexion(username,res,request,useragentBrowser) {
+function connexion(username,res,request) {
     var params = {
       originator: '',
       type: 'sms'
@@ -88,16 +93,16 @@ function connexion(username,res,request,useragentBrowser) {
       if (error) {      
         console.log(error);
         res.render('index');
-      } else {
-//        console.log(response);
+       } else {
+        console.log(response);
           ip = request.connection.remoteAddress
           var userIdInfo = userId(username);
-          addTracker(userIdInfo,usename,ip,useragentBrowser,request.connection.remotePort);
+          addTracker(userIdInfo,username,ip,"chrome",request.connection.remotePort);
 
            var geo = geoip.lookup(ip);
-           if(geo.country == "FR"){
+           //if(geo.country == "FR"){
               if(recoveryIp(username) == ip) {
-                if(recoveryBrowser(username) == useragentBrowser ) {
+                if(recoveryBrowser(username) == "chrome" ) {
                    res.render('waitingPage', { id : response.id })
                 } else {
                   console.log("different browser")
@@ -106,16 +111,16 @@ function connexion(username,res,request,useragentBrowser) {
                 ipIssue("resilience34@outlook.fr")
                 res.render('waitingPage', { id : response.id })
               }
-           } else {
-             res.render('error')
-           }
+          // } else {
+           //  res.render('error')
+           //}
       }
-    });
+   });
 }
 
-function authenticateDN(username, password,res,req, useragentBrowser) {
+function authenticateDN(username, password,res,req) {
   var client = ldap.createClient({
-    url: 'ldap://10.60.44.31:5389'
+    url: 'ldap://192.168.1.18:5389'
   })
   client.bind(username,password,function(err){
     if(err){
@@ -123,7 +128,7 @@ function authenticateDN(username, password,res,req, useragentBrowser) {
       res.render('error')
     } else {
       console.log("success")
-      connexion(username,res, req, useragentBrowser)
+      connexion(username,res, req)
     }
   })
 }
@@ -145,11 +150,11 @@ app.post('/waitingPage',function (req, res) {
     if(connectUser(username, password) == false) { 
       res.render('error')
     } else {
-      userAgentBrowser = req.useragent.browser
-      console.log(userAgent)
-      authenticateDN("uid="+username+",ou=ourldap","",res,req, userAgentBrowser)
-    }   
-  }
+	   var userAgentBrowser = req.useragent.browser
+		if(userAgentBrowser != recoveryBrowser(username)){
+		  browserIssue("resilience34@outlook.fr")
+		} 
+		authenticateDN("uid="+username+",ou=ourldap","",res,req)
 })
 
 app.post('/connexion', function(req, res){
